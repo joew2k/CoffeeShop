@@ -1,2 +1,0 @@
--- SQLite
-select * From drink;

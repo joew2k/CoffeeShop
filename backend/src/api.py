@@ -18,7 +18,7 @@ CORS(app)
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this funciton will add one
 '''
-db_drop_and_create_all()
+#db_drop_and_create_all()
 
 # ROUTES
 '''
@@ -49,10 +49,11 @@ def get_drinks_short():
 @app.route('/drinks-detail')
 def get_drinks_details():
     drinks = Drink.query.all()
-    return jsonify({
+    print(drinks)
+    return {
         'success': 200,
         'drinks': [drink.long() for drink in drinks]
-    })
+    }
 
 '''
 @TODO implement endpoint
@@ -86,7 +87,11 @@ def add_drink():
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the updated drink
         or appropriate status code indicating reason for failure
 '''
-
+@app.route('/dinks/<int:id>', methods = ['PATCH'])
+def update_drink(id):
+    drink = Drink.query.filter_by(id).all()
+    for d in drink:
+        print(d)
 
 '''
 @TODO implement endpoint
