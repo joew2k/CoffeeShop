@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify, abort
 from sqlalchemy import exc
 import json
 from flask_cors import CORS
-
+from sqlalchemy import desc
 from .database.models import db_drop_and_create_all, setup_db, Drink
 from .auth.auth import AuthError, requires_auth
 
@@ -18,7 +18,7 @@ CORS(app)
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this funciton will add one
 '''
-#db_drop_and_create_all()
+# db_drop_and_create_all()
 
 # ROUTES
 '''
@@ -32,6 +32,7 @@ CORS(app)
 @app.route('/drinks')
 def get_drinks_short():
     drinks = Drink.query.all()
+    print(drinks)
     return jsonify({
         'success': 200,
         'drinks': [drink.short() for drink in drinks]
@@ -49,11 +50,10 @@ def get_drinks_short():
 @app.route('/drinks-detail')
 def get_drinks_details():
     drinks = Drink.query.all()
-    print(drinks)
-    return {
-        'success': 200,
-        'drinks': [drink.long() for drink in drinks]
-    }
+    return jsonify({
+        "success": 200,
+        "drinks": [drink.long() for drink in drinks]
+    })
 
 '''
 @TODO implement endpoint
@@ -69,12 +69,17 @@ def add_drink():
     body = request.get_json()
     if not body:
         abort(422)
-    title = body.get('title')
+    title = body.get('title').replace("\'", "\"")
     recipe = [body.get('recipe')]
-    drink = Drink(title=title, recipe = str(recipe))
+    drink = Drink(title=title, recipe = str(recipe).replace("\'", "\""))
     drink.insert()
+
+    new_drink = Drink.query.order_by(desc(Drink.id)).limit(1)
+    print(new_drink)
     
-    return body
+    return jsonify({
+        'success': True
+    })
 
 '''
 @TODO implement endpoint
@@ -87,11 +92,27 @@ def add_drink():
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the updated drink
         or appropriate status code indicating reason for failure
 '''
-@app.route('/dinks/<int:id>', methods = ['PATCH'])
+@app.route('/drinks/<int:id>', methods = ['PATCH'])
 def update_drink(id):
-    drink = Drink.query.filter_by(id).all()
-    for d in drink:
-        print(d)
+    body = request.get_json()
+    drink = Drink.query.filter(Drink.id==id).one_or_none()
+    # print(drink.title)
+    # print(body.get('title'))
+    if drink is None:
+        abort(400)
+    else:
+        try:
+            if 'title' in drink:
+                drink.title = body.get('title')
+            if 'recipe' in drink:
+                drink.recipe = str([body.get('recipe')])
+            drink.update()
+            return jsonify({
+            'success': 200
+            })
+        except Exception as e:
+            abort(400)
+
 
 '''
 @TODO implement endpoint
