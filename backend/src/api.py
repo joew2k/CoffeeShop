@@ -1,5 +1,6 @@
 
 import os
+from turtle import title
 from flask import Flask, request, jsonify, abort
 from sqlalchemy import exc
 import json
@@ -32,7 +33,8 @@ CORS(app)
 @app.route('/drinks')
 def get_drinks_short():
     drinks = Drink.query.all()
-    print(drinks)
+    if drinks is None:
+        abort(404)
     return jsonify({
         'success': 200,
         'drinks': [drink.short() for drink in drinks]
@@ -50,6 +52,8 @@ def get_drinks_short():
 @app.route('/drinks-detail')
 def get_drinks_details():
     drinks = Drink.query.all()
+    if drinks is None:
+        abort(404)
     return jsonify({
         "success": 200,
         "drinks": [drink.long() for drink in drinks]
@@ -71,15 +75,22 @@ def add_drink():
         abort(422)
     title = body.get('title').replace("\'", "\"")
     recipe = [body.get('recipe')]
-    drink = Drink(title=title, recipe = str(recipe).replace("\'", "\""))
-    drink.insert()
-
-    new_drink = Drink.query.order_by(desc(Drink.id)).limit(1)
-    print(new_drink)
-    
-    return jsonify({
-        'success': True
-    })
+    if title is None:
+        abort(422)
+    if recipe is None:
+        abort(422)
+    try:
+        drink = Drink(title=title, recipe = str(recipe).replace("\'", "\""))
+        drink.insert()
+        new_drink = Drink.query.order_by(desc(Drink.id)).first()
+        print(new_drink)
+        
+        return jsonify({
+            'success': True,
+            'drinks': new_drink.long()
+        })
+    except Exception as e:
+        print(e)
 
 '''
 @TODO implement endpoint
@@ -96,23 +107,25 @@ def add_drink():
 def update_drink(id):
     body = request.get_json()
     drink = Drink.query.filter(Drink.id==id).one_or_none()
-    # print(drink.title)
+    print(drink.title)
+    title = body.get("title")
+    recipe = body.get("recipe")
     # print(body.get('title'))
     if drink is None:
         abort(400)
-    else:
-        try:
-            if 'title' in drink:
-                drink.title = body.get('title')
-            if 'recipe' in drink:
-                drink.recipe = str([body.get('recipe')])
-            drink.update()
-            return jsonify({
-            'success': 200
-            })
-        except Exception as e:
-            abort(400)
+    if title:
+        drink.title = body.get("title")
+    if recipe:
+        drink.recipe = str([body.get("recipe")])
+    drink.update()
 
+    updated_drink = Drink.query.filter(Drink.id==id).one_or_none()
+    print(updated_drink.long())
+    return jsonify({
+            'success': True,
+            'drinks': updated_drink.long()
+            })
+    
 
 '''
 @TODO implement endpoint
@@ -124,7 +137,22 @@ def update_drink(id):
     returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
-
+@app.route('/drinks/<int:id>', methods = ['DELETE'])
+def delete_drink(id):
+    drink = Drink.query.filter(Drink.id == id).one_or_none()
+    if not drink:
+        raise AuthError({
+            'code': 'Not_found',
+            'description': 'Not found'
+        }, 404)
+    try:
+        drink.delete()
+        return jsonify({
+        'success': True,
+        'delete': drink.id
+    })
+    except Exception as e:
+        print(e)
 
 # Error Handling
 '''
@@ -156,9 +184,21 @@ def unprocessable(error):
 @TODO implement error handler for 404
     error handler should conform to general task above
 '''
-
+@app.errorhandler(404)
+def Not_found(error):
+    return jsonify({
+        "success": False,
+        "error": 404,
+        "message": "Resource Not Found"
+    }), 404
 
 '''
 @TODO implement error handler for AuthError
     error handler should conform to general task above
 '''
+@app.errorhandler(404)
+def AuthError(error):
+    return jsonify({
+        "code": 'Not found',
+        "description": 'resource not found',
+    }, 404)
