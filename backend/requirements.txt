@@ -10,7 +10,6 @@ Jinja2
 lazy-object-proxy
 MarkupSafe
 mccabe
-pycryptodome
 pylint
 python-jose-cryptodome
 six

@@ -50,7 +50,8 @@ def get_drinks_short():
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks-detail')
-def get_drinks_details():
+@requires_auth('get:drinks-detail')
+def get_drinks_details(payload):
     drinks = Drink.query.all()
     if drinks is None:
         abort(404)
@@ -69,7 +70,8 @@ def get_drinks_details():
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks', methods = ['POST'])
-def add_drink():
+@requires_auth('post:drinks')
+def add_drink(payload):
     body = request.get_json()
     if not body:
         abort(422)
@@ -104,6 +106,7 @@ def add_drink():
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks/<int:id>', methods = ['PATCH'])
+@requires_auth('patch:drinks')
 def update_drink(id):
     body = request.get_json()
     drink = Drink.query.filter(Drink.id==id).one_or_none()
@@ -138,6 +141,7 @@ def update_drink(id):
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks/<int:id>', methods = ['DELETE'])
+@requires_auth('delete:drinks')
 def delete_drink(id):
     drink = Drink.query.filter(Drink.id == id).one_or_none()
     if not drink:
