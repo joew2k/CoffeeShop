@@ -107,7 +107,7 @@ def add_drink(payload):
 '''
 @app.route('/drinks/<int:id>', methods = ['PATCH'])
 @requires_auth('patch:drinks')
-def update_drink(id):
+def update_drink(payload, id):
     body = request.get_json()
     drink = Drink.query.filter(Drink.id==id).one_or_none()
     print(drink.title)
@@ -142,7 +142,7 @@ def update_drink(id):
 '''
 @app.route('/drinks/<int:id>', methods = ['DELETE'])
 @requires_auth('delete:drinks')
-def delete_drink(id):
+def delete_drink(payload, id):
     drink = Drink.query.filter(Drink.id == id).one_or_none()
     if not drink:
         raise AuthError({
