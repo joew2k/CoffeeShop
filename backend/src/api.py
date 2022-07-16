@@ -85,7 +85,6 @@ def add_drink(payload):
         drink = Drink(title=title, recipe = str(recipe).replace("\'", "\""))
         drink.insert()
         new_drink = Drink.query.order_by(desc(Drink.id)).first()
-        print(new_drink)
         
         return jsonify({
             'success': True,
@@ -110,10 +109,8 @@ def add_drink(payload):
 def update_drink(payload, id):
     body = request.get_json()
     drink = Drink.query.filter(Drink.id==id).one_or_none()
-    print(drink.title)
     title = body.get("title")
     recipe = body.get("recipe")
-    # print(body.get('title'))
     if drink is None:
         abort(400)
     if title:
@@ -123,7 +120,6 @@ def update_drink(payload, id):
     drink.update()
 
     updated_drink = Drink.query.filter(Drink.id==id).one_or_none()
-    print(updated_drink.long())
     return jsonify({
             'success': True,
             'drinks': updated_drink.long()
@@ -183,6 +179,13 @@ def unprocessable(error):
                     }), 404
 
 '''
+@app.errorhandler(401)
+def unprocessable(error):
+    return jsonify({
+        "success": False,
+        "error": 401,
+        "message": "Unauthorized"
+    }), 401
 
 '''
 @TODO implement error handler for 404
