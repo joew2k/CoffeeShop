@@ -140,11 +140,8 @@ def update_drink(payload, id):
 @requires_auth('delete:drinks')
 def delete_drink(payload, id):
     drink = Drink.query.filter(Drink.id == id).one_or_none()
-    if not drink:
-        raise AuthError({
-            'code': 'Not_found',
-            'description': 'Not found'
-        }, 404)
+    if drink is None:
+        abort(404)
     try:
         drink.delete()
         return jsonify({
@@ -209,3 +206,17 @@ def AuthError(error):
         "code": 'Not found',
         "description": 'resource not found',
     }, 404)
+
+@app.errorhandler(400)
+def AuthError(error):
+    return jsonify({
+        "code": 'Bad_request',
+        "description": 'Bad Request',
+    }, 400)
+
+@app.errorhandler(403)
+def AuthError(error):
+    return jsonify({
+        "code": 'No_Permission',
+        "description": 'No permission to access the resource',
+    }, 403)

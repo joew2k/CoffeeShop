@@ -23,10 +23,7 @@ def get_token_auth_header():
     """
     auth = request.headers.get('Authorization', None)
     if not auth:
-        raise AuthError({
-            'code': 'authorization_header_missing',
-            'description': 'Authorization header is expected.'
-        }, 401)
+        abort(401)
 
     parts = auth.split()
     if parts[0].lower() != 'bearer':
@@ -115,7 +112,7 @@ def check_permissions(permission, payload):
         raise AuthError({
             'code': 'unauthorized',
             'description': 'Permission not found.'
-        }, 401)
+        }, 403)
     return True
 def requires_auth(permission = ''):
     def requires_auth_decor(f):
@@ -129,7 +126,7 @@ def requires_auth(permission = ''):
             try:
                 check_permissions(permission, payload)
             except:
-                abort(401)
+                abort(403)
             return f(payload, *args, **kwargs)
 
         return wrapper
