@@ -127,7 +127,11 @@ def requires_auth(permission = ''):
             try:
                 check_permissions(permission, payload)
             except:
-                abort(403)
+                raise AuthError({
+                    'code': 'unauthorized',
+                    'description': 'Permission not found.',
+                    'status': 403
+                }, 403)
             return f(payload, *args, **kwargs)
 
         return wrapper

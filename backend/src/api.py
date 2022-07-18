@@ -75,20 +75,23 @@ def add_drink(payload):
     body = request.get_json()
     if not body:
         abort(422)
-    title = body.get('title').replace("\'", "\"")
-    recipe = [body.get('recipe')]
+    # title = body.get('title').replace("\'", "\"")
+    title = json.dumps(body.get('title'))
+    recipe = json.dumps(body.get('recipe'))
+
+    # recipe = [body.get('recipe')]
     if title is None:
         abort(422)
     if recipe is None:
         abort(422)
     try:
-        drink = Drink(title=title, recipe = str(recipe).replace("\'", "\""))
+        drink = Drink(title=title, recipe = recipe)
         drink.insert()
         new_drink = Drink.query.order_by(desc(Drink.id)).first()
         
         return jsonify({
             'success': True,
-            'drinks': new_drink.long()
+            'drinks': [new_drink.long()]
         })
     except Exception as e:
         print(e)
@@ -118,13 +121,13 @@ def update_drink(payload, id):
     if title:
         drink.title = body.get("title")
     if recipe:
-        drink.recipe = str([body.get("recipe")])
+        drink.recipe = json.dumps(body.get('recipe'))
     drink.update()
 
-    updated_drink = Drink.query.filter(Drink.id==id).one_or_none()
+    drink = Drink.query.filter(Drink.id==id).one_or_none()
     return jsonify({
             "success": True,
-            "drinks": [updated_drink.long()]
+            "drinks": [drink.long()]
             })
     
 
@@ -179,7 +182,7 @@ def unprocessable(error):
 
 '''
 @app.errorhandler(401)
-def unprocessable(error):
+def unauthorized(error):
     return jsonify({
         "success": False,
         "error": 401,
@@ -202,24 +205,18 @@ def Not_found(error):
 @TODO implement error handler for AuthError
     error handler should conform to general task above
 '''
-@app.errorhandler(404)
-def AuthError(error):
-    return jsonify({
-        "code": 'Not found',
-        "description": 'resource not found',
-    }), 404
+@app.errorhandler(AuthError)
+def handle_auth_error(ex):
+    response = jsonify(ex.error)
+    response.status_code = ex.status_code
+    return response
+
+
 
 @app.errorhandler(400)
-def AuthError(error):
+def bad_request(error):
     return jsonify({
         "code": 'Bad_request',
         "description": 'Bad Request',
     }), 400
 
-@app.errorhandler(403)
-def AuthError(error):
-    return jsonify({
-        "code": 'No_Permission',
-        "description": 'No permission to access the resource',
-        'status': 403
-    }),403
