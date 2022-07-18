@@ -19,7 +19,7 @@ CORS(app)
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this funciton will add one
 '''
-# db_drop_and_create_all()
+db_drop_and_create_all()
 
 # ROUTES
 '''
@@ -109,6 +109,8 @@ def add_drink(payload):
 def update_drink(payload, id):
     body = request.get_json()
     drink = Drink.query.filter(Drink.id==id).one_or_none()
+    if drink is None:
+        abort(404)
     title = body.get("title")
     recipe = body.get("recipe")
     if drink is None:
@@ -121,8 +123,8 @@ def update_drink(payload, id):
 
     updated_drink = Drink.query.filter(Drink.id==id).one_or_none()
     return jsonify({
-            'success': True,
-            'drinks': updated_drink.long()
+            "success": True,
+            "drinks": [updated_drink.long()]
             })
     
 
@@ -205,18 +207,19 @@ def AuthError(error):
     return jsonify({
         "code": 'Not found',
         "description": 'resource not found',
-    }, 404)
+    }), 404
 
 @app.errorhandler(400)
 def AuthError(error):
     return jsonify({
         "code": 'Bad_request',
         "description": 'Bad Request',
-    }, 400)
+    }), 400
 
 @app.errorhandler(403)
 def AuthError(error):
     return jsonify({
         "code": 'No_Permission',
         "description": 'No permission to access the resource',
-    }, 403)
+        'status': 403
+    }),403
